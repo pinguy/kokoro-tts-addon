@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            width: 350px;
+            padding: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        textarea {
+            width: 100%;
+            height: 80px;
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .controls > * {
+            flex: 1;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .primary-btn {
+            background: #4CAF50;
+            color: white;
+        }
+        .primary-btn:hover {
+            background: #45a049;
+        }
+        .primary-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .secondary-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        .secondary-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .status {
+            text-align: center;
+            font-size: 12px;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .status.success { background: rgba(76, 175, 80, 0.2); }
+        .status.error { background: rgba(244, 67, 54, 0.2); }
+        .status.loading { background: rgba(255, 193, 7, 0.2); }
+        .quick-actions {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        .quick-btn {
+            flex: 1;
+            padding: 6px;
+            font-size: 11px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .quick-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🎙️ Kokoro TTS</div>
+        <div class="subtitle">High-quality neural text-to-speech</div>
+    </div>
+    
+    <div class="quick-actions">
+        <button class="quick-btn" id="getSelection">Get Selection</button>
+        <button class="quick-btn" id="getPage">Get Page Text</button>
+        <button class="quick-btn" id="clearText">Clear</button>
+    </div>
+    
+    <div class="form-group">
+        <label for="textInput">Text to speak:</label>
+        <textarea id="textInput" placeholder="Enter text here or use quick actions above..."></textarea>
+    </div>
+    
+    <div class="controls">
+        <div class="form-group">
+            <label for="voiceSelect">Voice:</label>
+            <select id="voiceSelect">
+                <option value="af_heart">American Female (Heart)</option>
+                <option value="af_sarah">American Female (Sarah)</option>
+                <option value="af_sky">American Female (Sky)</option>
+                <option value="am_adam">American Male (Adam)</option>
+                <option value="am_michael">American Male (Michael)</option>
+                <option value="bf_emma">British Female (Emma)</option>
+                <option value="bf_isabella">British Female (Isabella)</option>
+                <option value="bm_george">British Male (George)</option>
+                <option value="bm_lewis">British Male (Lewis)</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="speedInput">Speed:</label>
+            <input type="range" id="speedInput" min="0.5" max="2" step="0.1" value="1">
+            <span id="speedValue">1.0x</span>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label for="langSelect">Language:</label>
+        <select id="langSelect">
+            <option value="a">🇺🇸 American English</option>
+            <option value="b">🇬🇧 British English</option>
+            <option value="e">🇪🇸 Spanish</option>
+            <option value="f">🇫🇷 French</option>
+            <option value="h">🇮🇳 Hindi</option>
+            <option value="i">🇮🇹 Italian</option>
+            <option value="j">🇯🇵 Japanese</option>
+            <option value="p">🇧🇷 Portuguese (BR)</option>
+            <option value="z">🇨🇳 Mandarin Chinese</option>
+        </select>
+    </div>
+    
+    <button id="speakBtn" class="primary-btn">🎵 Generate Speech</button>
+    <button id="stopBtn" class="secondary-btn" style="display:none;">⏹️ Stop</button>
+    
+    <div id="status" class="status" style="display:none;"></div>
+    
+    <audio id="audioPlayer" controls style="width:100%; margin-top:10px; display:none;"></audio>
+    
+    <script src="popup.js"></script>
+</body>
+</html>

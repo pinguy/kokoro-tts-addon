@@ -1,0 +1,92 @@
+/*
+ * styles.css
+ *
+ * This file contains general styles applied by the content script (content.js)
+ * to elements injected into webpages by the Kokoro TTS Firefox add-on.
+ */
+
+/* Basic reset for injected elements to ensure consistent styling */
+#kokoro-tts-float-btn,
+#kokoro-tts-notification {
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif; /* Use Inter font as requested */
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Floating TTS Button Styles */
+#kokoro-tts-float-btn {
+    /* Styles are mostly defined inline in content.js for dynamic positioning/animation.
+       This section provides default or override styles if needed. */
+    background-color: #667eea; /* A nice purple-blue */
+    color: white;
+    border: none;
+    border-radius: 50%; /* Fully rounded circle */
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 10000; /* Ensure it's above most page content */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* Soft shadow */
+    transition: all 0.3s ease; /* Smooth transitions for hover/visibility */
+    display: flex; /* For centering content */
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+}
+
+#kokoro-tts-float-btn:hover {
+    background-color: #5a67d8; /* Slightly darker on hover */
+    transform: scale(1.1); /* Slight enlarge effect */
+}
+
+/* Notification Styles */
+#kokoro-tts-notification {
+    /* Styles are mostly defined inline in content.js for dynamic colors/animation.
+       This section provides default or override styles if needed. */
+    position: fixed; /* Fixed position relative to viewport */
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%); /* Center horizontally */
+    background-color: #2196F3; /* Default info blue */
+    color: white;
+    padding: 12px 20px;
+    border-radius: 6px; /* Rounded corners */
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10001; /* Above the floating button */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3); /* Prominent shadow */
+    opacity: 0; /* Starts hidden, fades in via JS */
+    transition: opacity 0.3s ease, transform 0.3s ease; /* Smooth fade and possible movement */
+    text-align: center;
+    min-width: 200px; /* Ensure some width */
+    max-width: 80%; /* Don't be too wide on small screens */
+}
+
+/* Specific notification types (colors are often set by JS, but can be here too) */
+/*
+.kokoro-tts-notification.info { background-color: #2196F3; }
+.kokoro-tts-notification.success { background-color: #4CAF50; }
+.kokoro-tts-notification.error { background-color: #f44336; }
+.kokoro-tts-notification.loading { background-color: #FF9800; }
+*/
+
+/* Responsive adjustments for smaller screens if needed (though fixed position helps) */
+@media (max-width: 600px) {
+    #kokoro-tts-float-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+        right: 15px;
+        top: 15px;
+    }
+
+    #kokoro-tts-notification {
+        font-size: 13px;
+        padding: 10px 15px;
+        top: 15px;
+        width: 90%; /* Take more width on small screens */
+        transform: translateX(-50%);
+    }
+}
+
