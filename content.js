@@ -272,4 +272,3 @@
     });
     
 })(); // End of IIFE for content script
-
