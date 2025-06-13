@@ -203,4 +203,3 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true; // Indicates that sendResponse will be called asynchronously.
     }
 });
-
