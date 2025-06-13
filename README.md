@@ -120,4 +120,6 @@ Powered by the Kokoro TTS model
 
 # Known Bugs
 
-If you mic Pop UI is active in any other tab other tabs won't be able to use the player so see that message it open on a tab.
+If the Mic Pop UI is active in any other tab other tabs won't be able to use the player so see a message that it is playing and hearing nothing it open on a tab.
+
+---
