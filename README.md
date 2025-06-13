@@ -109,7 +109,7 @@ Powered by the Kokoro TTS model
 
 | Feature                                                          | Preview                                                                                 |
 | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| **Popup UI**: Select text, click, and this pops up.              | [![UI Preview](https://i.imgur.com/zXvETFV.png)](https://i.imgur.com/zXvETFV.png)       |
+| **Popup UI**: Select text, and this pops up.              | [![UI Preview](https://i.imgur.com/zXvETFV.png)](https://i.imgur.com/zXvETFV.png)       |
 | **Playback in Action**: After clicking "Generate Speech"         | [![Playback Preview](https://i.imgur.com/STeXJ78.png)](https://i.imgur.com/STeXJ78.png) |
 | **System Notifications**: Get notified when playback starts      | *(not pictured)*                                             |
 | **Settings Panel**: Server toggle, configuration options         | [![Settings](https://i.imgur.com/wNOgrnZ.png)](https://i.imgur.com/wNOgrnZ.png)         |
