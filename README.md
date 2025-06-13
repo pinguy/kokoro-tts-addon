@@ -117,3 +117,9 @@ Powered by the Kokoro TTS model
 | **Accents Supported**: 🇺🇸 American English, 🇬🇧 British English, 🇪🇸 Spanish, 🇫🇷 French, 🇮🇹 Italian, 🇧🇷 Portuguese (BR), 🇮🇳 Hindi, 🇯🇵 Japanese,  🇨🇳 Mandarin Chines | [![Accents](https://i.imgur.com/lc7qgYN.png)](https://i.imgur.com/lc7qgYN.png)          |
 
 ---
+
+# Video - Kokoro Text-to-Speech - Local on a Potato Vs Hugging Face 
+
+[![Watch the video](https://img.youtube.com/vi/6AVZFwWllgU/hqdefault.jpg)](https://www.youtube.com/watch?v=6AVZFwWllgU)
+
+---
