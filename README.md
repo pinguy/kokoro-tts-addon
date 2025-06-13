@@ -122,4 +122,6 @@ Powered by the Kokoro TTS model
 
 [![Watch the video](https://img.youtube.com/vi/6AVZFwWllgU/hqdefault.jpg)](https://www.youtube.com/watch?v=6AVZFwWllgU)
 
+*Comparison of offline vs online generation speed.*
+
 ---
