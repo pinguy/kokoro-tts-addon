@@ -24,4 +24,3 @@ window.addEventListener('message', (event) => {
         }, { once: true });
     }
 });
-
