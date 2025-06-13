@@ -22,7 +22,7 @@ It uses a lightweight Flask server and the Kokoro model running locally on your 
 
 - 🎙️ Neural TTS with multiple voice options
 - 🔒 Offline-first & privacy-respecting
-- 🧊 Lightweight: ~500MB RAM usage
+- 🧊 Lightweight: Small 82M parameters
 - 🥔 Works on low-end CPUs
 - 🌍 Linux, macOS, and Windows support
 
