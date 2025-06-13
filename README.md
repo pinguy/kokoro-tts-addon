@@ -1,6 +1,10 @@
-# Kokoro TTS Add-on (v1.1)
+# Kokoro TTS Add-on
 
 > A Firefox extension for local neural TTS that runs so efficiently, even your old laptop feels futuristic.
+
+> **Tested on a Xeon E3-1265L v3** — a low-power CPU from 2013.
+> Ran multiple TTS jobs in parallel with barely perceptible lag.
+> If it works on this, it'll fly on your gear.
 
 ## 🧠 What is this?
 
