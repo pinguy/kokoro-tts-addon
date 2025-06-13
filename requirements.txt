@@ -1,0 +1,32 @@
+# Core libraries for training and inference
+torch
+transformers
+datasets
+peft
+sentence-transformers
+
+# Utility libraries
+numpy
+scikit-learn
+matplotlib
+psutil
+tqdm
+pyyaml
+ftfy
+librosa 
+scipy
+soundfile
+kokoro
+
+# PDF processing
+pdfminer.six
+PyMuPDF
+
+# Memory and embeddings
+faiss-cpu
+
+# Optional interactive/monitoring tools
+wandb
+spacy
+gradio
+requests
