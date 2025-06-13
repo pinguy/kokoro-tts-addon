@@ -124,4 +124,6 @@ Powered by the Kokoro TTS model
 
 *Comparison of offline vs online generation speed.*
 
+Online: https://huggingface.co/spaces/webml-community/kokoro-webgpu
+
 ---
