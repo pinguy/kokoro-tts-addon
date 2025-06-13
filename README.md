@@ -117,9 +117,3 @@ Powered by the Kokoro TTS model
 | **Accents Supported**: 🇺🇸 American English, 🇬🇧 British English, 🇪🇸 Spanish, 🇫🇷 French, 🇮🇹 Italian, 🇧🇷 Portuguese (BR) the other 3 are buggy | [![Accents](https://i.imgur.com/lc7qgYN.png)](https://i.imgur.com/lc7qgYN.png)          |
 
 ---
-
-# Known Bugs
-
-If the Mic Pop UI is active in any other tab other tabs won't be able to use the player so see a message that it is playing and hearing nothing it open on a tab.
-
----
