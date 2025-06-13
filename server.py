@@ -2,15 +2,17 @@
 """
 Kokoro TTS Local Server
 A local HTTP server that interfaces with the Kokoro TTS model for the Firefox addon.
+Enhanced with GPU/CPU detection and thread scaling.
 """
 
 import os
 import io
 import json
 import tempfile
+import multiprocessing
 from pathlib import Path
 from typing import Optional, Dict, Any
-import logging # Import logging
+import logging
 
 import torch
 import soundfile as sf
@@ -29,38 +31,136 @@ pipelines: Dict[str, KPipeline] = {}
 # Voice mapping as provided in your original script
 VOICE_MAPPING = {
     'af_heart': 'af_heart',
+    'af_alloy': 'af_alloy',
+    'af_aoede': 'af_aoede',
+    'af_bella': 'af_bella',
+    'af_jessica': 'af_jessica',
+    'af_kore': 'af_kore',
+    'af_nicole': 'af_nicole',
+    'af_nova': 'af_nova',
+    'af_river': 'af_river',
     'af_sarah': 'af_sarah',
     'af_sky': 'af_sky',
     'am_adam': 'am_adam',
+    'am_echo': 'am_echo',
+    'am_eric': 'am_eric',
+    'am_fenrir': 'am_fenrir',
+    'am_liam': 'am_liam',
     'am_michael': 'am_michael',
+    'am_onyx': 'am_onyx',
+    'am_puck': 'am_puck',
+    'am_santa': 'am_santa',
+    'bf_alice': 'bf_alice',
     'bf_emma': 'bf_emma',
     'bf_isabella': 'bf_isabella',
+    'bf_lily': 'bf_lily',
+    'bm_daniel': 'bm_daniel',
+    'bm_fable': 'bm_fable',
     'bm_george': 'bm_george',
     'bm_lewis': 'bm_lewis'
 }
+
+def detect_device():
+    """Detect the best available device (GPU/CPU) and configure PyTorch accordingly."""
+    device = "cpu"
+    device_info = "CPU"
+    
+    if torch.cuda.is_available():
+        device = "cuda"
+        gpu_name = torch.cuda.get_device_name(0)
+        gpu_memory = torch.cuda.get_device_properties(0).total_memory / (1024**3)  # GB
+        device_info = f"GPU: {gpu_name} ({gpu_memory:.1f}GB VRAM)"
+        
+        # Enable optimizations for GPU
+        torch.backends.cudnn.benchmark = True
+        torch.backends.cudnn.enabled = True
+        
+        app.logger.info(f"CUDA GPU detected and enabled: {gpu_name}")
+        
+    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        device = "mps"
+        device_info = "Apple Silicon GPU (Metal Performance Shaders)"
+        app.logger.info("Apple Silicon GPU detected and enabled")
+        
+    else:
+        # Configure CPU optimizations
+        cpu_count = multiprocessing.cpu_count()
+        
+        # Set optimal thread count for CPU inference
+        # Use all cores but leave some headroom for system processes
+        optimal_threads = max(1, cpu_count - 1) if cpu_count > 2 else cpu_count
+        
+        torch.set_num_threads(optimal_threads)
+        torch.set_num_interop_threads(optimal_threads)
+        
+        # Enable CPU optimizations
+        if hasattr(torch.backends, 'mkldnn'):
+            torch.backends.mkldnn.enabled = True
+            
+        device_info = f"CPU: {cpu_count} cores (using {optimal_threads} threads)"
+        app.logger.info(f"Using CPU with {optimal_threads} threads out of {cpu_count} available cores")
+    
+    # Set default tensor type based on device
+    if device == "cuda":
+        torch.set_default_tensor_type('torch.cuda.FloatTensor')
+    else:
+        torch.set_default_tensor_type('torch.FloatTensor')
+    
+    return device, device_info
+
+# Initialize device detection
+DEVICE, DEVICE_INFO = detect_device()
+app.logger.info(f"Initialized with device: {DEVICE_INFO}")
 
 def get_pipeline(lang_code: str) -> KPipeline:
     """Get or create a pipeline for the given language code."""
     try:
         if lang_code not in pipelines:
             app.logger.info(f"Initializing pipeline for language: {lang_code}")
-            pipelines[lang_code] = KPipeline(lang_code=lang_code)
+            
+            # Create pipeline and move to appropriate device
+            pipeline = KPipeline(lang_code=lang_code)
+            
+            # Move pipeline models to the detected device if GPU is available
+            if DEVICE != "cpu" and hasattr(pipeline, 'model'):
+                try:
+                    if hasattr(pipeline.model, 'to'):
+                        pipeline.model.to(DEVICE)
+                        app.logger.info(f"Moved pipeline model to {DEVICE}")
+                except Exception as e:
+                    app.logger.warning(f"Could not move model to {DEVICE}, using CPU: {e}")
+            
+            pipelines[lang_code] = pipeline
+            
         return pipelines[lang_code]
     except Exception as e:
         app.logger.error(f"Error initializing pipeline for language {lang_code}: {e}")
-        raise # Re-raise the exception to be caught by the route handler
+        raise
 
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint."""
     try:
         # Attempt to get a pipeline for a default language to check readiness
-        # This will also ensure required models are loaded if not already.
         get_pipeline('a')
         app.logger.info("Health check successful.")
+        
+        # Get system information
+        cpu_count = multiprocessing.cpu_count()
+        memory_info = "N/A"
+        
+        if DEVICE == "cuda":
+            gpu_memory_used = torch.cuda.memory_allocated(0) / (1024**3)  # GB
+            gpu_memory_total = torch.cuda.get_device_properties(0).total_memory / (1024**3)  # GB
+            memory_info = f"{gpu_memory_used:.1f}GB / {gpu_memory_total:.1f}GB VRAM used"
+        
         return jsonify({
             'status': 'healthy',
             'message': 'Kokoro TTS Server is running',
+            'device': DEVICE_INFO,
+            'memory_info': memory_info,
+            'cpu_cores': cpu_count,
+            'torch_threads': torch.get_num_threads() if DEVICE == "cpu" else "N/A (GPU mode)",
             'available_languages': ['a', 'b', 'e', 'f', 'h', 'i', 'j', 'p', 'z'],
             'available_voices': list(VOICE_MAPPING.keys())
         }), 200
@@ -93,27 +193,34 @@ def generate_speech():
             return jsonify({'error': 'No text provided for speech generation'}), 400
 
         app.logger.info(f"Attempting to generate speech for text (first 50 chars): '{text[:50]}...' "
-                        f"with voice '{voice}', speed {speed}, language '{language}'.")
+                        f"with voice '{voice}', speed {speed}, language '{language}' on {DEVICE.upper()}")
 
         # Validate voice against known mapping
         if voice not in VOICE_MAPPING:
             app.logger.warning(f"Invalid voice requested: {voice}. Falling back to default 'af_heart'.")
-            voice = 'af_heart' # Fallback to default if invalid voice is provided
+            voice = 'af_heart'
 
         # Validate language against known supported languages
         supported_languages = ['a', 'b', 'e', 'f', 'h', 'i', 'j', 'p', 'z']
         if language not in supported_languages:
             app.logger.warning(f"Invalid language requested: {language}. Falling back to default 'a'.")
-            language = 'a' # Fallback to default if invalid language is provided
+            language = 'a'
 
         pipeline = get_pipeline(language)
         app.logger.info(f"Successfully obtained pipeline for language: {language}.")
 
         # Generate audio segments using the pipeline
         audio_segments = []
-        for i, (graphemes, phonemes, audio) in enumerate(pipeline(text, voice=voice, speed=speed, split_pattern=r'\n+')):
-            audio_segments.append(audio)
-            app.logger.debug(f"Generated audio segment {i} for graphemes: {graphemes}")
+        
+        # Use torch.no_grad() for inference to save memory
+        with torch.no_grad():
+            for i, (graphemes, phonemes, audio) in enumerate(pipeline(text, voice=voice, speed=speed, split_pattern=r'\n+')):
+                # Move audio to CPU if it's on GPU (for final processing)
+                if audio.device.type != 'cpu':
+                    audio = audio.cpu()
+                
+                audio_segments.append(audio)
+                app.logger.debug(f"Generated audio segment {i} for graphemes: {graphemes}")
 
         if not audio_segments:
             app.logger.error("Speech generation yielded no audio segments. This might indicate an issue with the text or pipeline.")
@@ -129,9 +236,9 @@ def generate_speech():
 
         # Save the combined audio to a BytesIO object in WAV format
         output_buffer = io.BytesIO()
-        # Using 24000 Hz sample rate as per the original script
-        sf.write(output_buffer, full_audio.numpy(), 24000, format='wav')
-        output_buffer.seek(0) # Rewind the buffer to the beginning
+        # Using 22050 Hz sample rate as per the original script
+        sf.write(output_buffer, full_audio.numpy(), 22050, format='wav')
+        output_buffer.seek(0)
 
         app.logger.info("Speech generation successful. Sending WAV audio file.")
         return send_file(output_buffer, mimetype='audio/wav', as_attachment=False, download_name='speech.wav')
@@ -140,15 +247,45 @@ def generate_speech():
         app.logger.exception(f"An unexpected error occurred during speech generation: {e}")
         return jsonify({'error': f'An internal server error occurred: {e}'}), 500
 
+@app.route('/system-info', methods=['GET'])
+def system_info():
+    """Get detailed system information."""
+    try:
+        info = {
+            'device': DEVICE,
+            'device_info': DEVICE_INFO,
+            'cpu_cores': multiprocessing.cpu_count(),
+            'torch_version': torch.__version__,
+        }
+        
+        if DEVICE == "cpu":
+            info['torch_threads'] = torch.get_num_threads()
+            info['torch_interop_threads'] = torch.get_num_interop_threads()
+            info['mkldnn_enabled'] = torch.backends.mkldnn.is_available() if hasattr(torch.backends, 'mkldnn') else False
+            
+        elif DEVICE == "cuda":
+            info['cuda_version'] = torch.version.cuda
+            info['gpu_count'] = torch.cuda.device_count()
+            info['current_gpu'] = torch.cuda.current_device()
+            info['gpu_memory_allocated'] = f"{torch.cuda.memory_allocated(0) / (1024**3):.2f} GB"
+            info['gpu_memory_total'] = f"{torch.cuda.get_device_properties(0).total_memory / (1024**3):.2f} GB"
+            
+        elif DEVICE == "mps":
+            info['mps_available'] = torch.backends.mps.is_available()
+            
+        return jsonify(info), 200
+        
+    except Exception as e:
+        app.logger.error(f"Error getting system info: {e}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     # Initialize a default pipeline on server startup for faster first request
     try:
-        get_pipeline('a') # Initialize American English pipeline by default
+        get_pipeline('a')
         app.logger.info("Default 'a' language pipeline initialized on startup.")
     except Exception as e:
         app.logger.error(f"Failed to initialize default pipeline on startup. Server will still run but TTS for 'a' language might fail on first request: {e}")
 
     # Run the Flask application
-    # host='0.0.0.0' makes it accessible from your network, not just localhost
-    # debug=False is recommended for more stable operation, especially if used by an add-on.
-    app.run(host='0.0.0.0', port=8000, debug=False)
+    app.run(host='0.0.0.0', port=8000, debug=False, threaded=True)
