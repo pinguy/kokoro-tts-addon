@@ -65,18 +65,50 @@ def detect_device():
     device = "cpu"
     device_info = "CPU"
     
+    # Check for CUDA (NVIDIA GPUs)
     if torch.cuda.is_available():
         device = "cuda"
         gpu_name = torch.cuda.get_device_name(0)
         gpu_memory = torch.cuda.get_device_properties(0).total_memory / (1024**3)  # GB
-        device_info = f"GPU: {gpu_name} ({gpu_memory:.1f}GB VRAM)"
+        device_info = f"NVIDIA GPU: {gpu_name} ({gpu_memory:.1f}GB VRAM)"
         
-        # Enable optimizations for GPU
+        # Enable optimizations for CUDA GPU
         torch.backends.cudnn.benchmark = True
         torch.backends.cudnn.enabled = True
         
         app.logger.info(f"CUDA GPU detected and enabled: {gpu_name}")
         
+    # Check for ROCm (AMD GPUs)
+    elif torch.cuda.is_available() and torch.version.hip is not None:
+        device = "cuda"  # ROCm uses CUDA API compatibility
+        try:
+            gpu_name = torch.cuda.get_device_name(0)
+            gpu_memory = torch.cuda.get_device_properties(0).total_memory / (1024**3)  # GB
+            device_info = f"AMD GPU (ROCm): {gpu_name} ({gpu_memory:.1f}GB VRAM)"
+            
+            # ROCm-specific optimizations
+            torch.backends.cudnn.benchmark = True
+            torch.backends.cudnn.enabled = True
+            
+            app.logger.info(f"ROCm AMD GPU detected and enabled: {gpu_name}")
+            app.logger.info(f"ROCm version: {torch.version.hip}")
+            
+        except Exception as e:
+            app.logger.warning(f"ROCm GPU detected but couldn't get details: {e}")
+            device_info = "AMD GPU (ROCm) - Details unavailable"
+        
+    # Alternative ROCm detection method (for older PyTorch versions)
+    elif hasattr(torch, 'hip') and torch.hip.is_available():
+        device = "cuda"  # ROCm uses CUDA-compatible API
+        try:
+            gpu_count = torch.hip.device_count()
+            device_info = f"AMD GPU (ROCm): {gpu_count} device(s) available"
+            app.logger.info(f"ROCm AMD GPU detected via torch.hip: {gpu_count} devices")
+        except Exception as e:
+            device_info = "AMD GPU (ROCm)"
+            app.logger.info("ROCm AMD GPU detected")
+        
+    # Check for Apple Silicon (MPS)
     elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
         device = "mps"
         device_info = "Apple Silicon GPU (Metal Performance Shaders)"
@@ -264,12 +296,27 @@ def system_info():
             info['mkldnn_enabled'] = torch.backends.mkldnn.is_available() if hasattr(torch.backends, 'mkldnn') else False
             
         elif DEVICE == "cuda":
-            info['cuda_version'] = torch.version.cuda
-            info['gpu_count'] = torch.cuda.device_count()
-            info['current_gpu'] = torch.cuda.current_device()
-            info['gpu_memory_allocated'] = f"{torch.cuda.memory_allocated(0) / (1024**3):.2f} GB"
-            info['gpu_memory_total'] = f"{torch.cuda.get_device_properties(0).total_memory / (1024**3):.2f} GB"
-            
+            # Check if this is ROCm or CUDA
+            if torch.version.hip is not None:
+                # ROCm (AMD GPU)
+                info['gpu_backend'] = 'ROCm'
+                info['rocm_version'] = torch.version.hip
+                info['gpu_count'] = torch.cuda.device_count()
+                info['current_gpu'] = torch.cuda.current_device()
+                try:
+                    info['gpu_memory_allocated'] = f"{torch.cuda.memory_allocated(0) / (1024**3):.2f} GB"
+                    info['gpu_memory_total'] = f"{torch.cuda.get_device_properties(0).total_memory / (1024**3):.2f} GB"
+                except:
+                    info['gpu_memory_info'] = "Memory info unavailable for ROCm device"
+            else:
+                # NVIDIA CUDA
+                info['gpu_backend'] = 'CUDA'
+                info['cuda_version'] = torch.version.cuda
+                info['gpu_count'] = torch.cuda.device_count()
+                info['current_gpu'] = torch.cuda.current_device()
+                info['gpu_memory_allocated'] = f"{torch.cuda.memory_allocated(0) / (1024**3):.2f} GB"
+                info['gpu_memory_total'] = f"{torch.cuda.get_device_properties(0).total_memory / (1024**3):.2f} GB"
+                
         elif DEVICE == "mps":
             info['mps_available'] = torch.backends.mps.is_available()
             
