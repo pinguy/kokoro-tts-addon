@@ -34,7 +34,7 @@ It uses a lightweight Flask server and the Kokoro model running locally on your 
 
 Head to the [Releases Page](https://github.com/pinguy/kokoro-tts-addon/releases) and grab:
 
-- `kokoro-tts-addon_1.1.xpi`
+- `latest kokoro-tts-addon.xpi`
 - `server.py`
 
 ### 2. Install the Add-on in Firefox
