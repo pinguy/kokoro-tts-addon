@@ -16,7 +16,7 @@ import logging
 
 import torch
 import soundfile as sf
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, Response # Import Response
 from flask_cors import CORS
 from kokoro import KPipeline
 
@@ -278,6 +278,45 @@ def generate_speech():
     except Exception as e:
         app.logger.exception(f"An unexpected error occurred during speech generation: {e}")
         return jsonify({'error': f'An internal server error occurred: {e}'}), 500
+
+# Add new streaming endpoint
+@app.route('/stream', methods=['POST'])
+def stream_speech():
+    try:
+        data = request.get_json()
+        text = data.get('text', '').strip()
+        voice = data.get('voice', 'af_heart')
+        speed = float(data.get('speed', 1.0))
+        language = data.get('language', 'a')
+
+        if not text:
+            return jsonify({'error': 'No text provided'}), 400
+
+        pipeline = get_pipeline(language)
+        
+        # Streaming response
+        def generate():
+            try:
+                with torch.no_grad():
+                    # Updated split_pattern to ensure more explicit line break handling and grouped punctuation.
+                    # r'[\.?!]+|[;,:]|\n+' will split by:
+                    #   - one or more periods, question marks, or exclamation marks (e.g., "...", "!")
+                    #   - single commas, semicolons, or colons
+                    #   - one or more newlines (e.g., "\n", "\n\n")
+                    for i, (_, _, audio) in enumerate(
+                        pipeline(text, voice=voice, speed=speed, split_pattern=r'[\.?!]+|[;,:]|\n+') 
+                    ):
+                        # Convert to raw PCM (16-bit, 22.05kHz, mono)
+                        pcm_data = (audio.numpy() * 32767).astype('int16').tobytes()
+                        yield pcm_data
+            except Exception as e:
+                app.logger.error(f"Streaming error: {e}")
+
+        return Response(generate(), mimetype='audio/x-raw')
+    
+    except Exception as e:
+        app.logger.exception(f"Streaming failed: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/system-info', methods=['GET'])
 def system_info():
