@@ -124,7 +124,7 @@
         console.log("Content Script: Creating audio player iframe.");
         audioPlayerIframe = document.createElement('iframe');
         audioPlayerIframe.id = 'kokoro-tts-player-iframe';
-        audioPlayerIframe.src = browser.runtime.getURL('player.html');
+        audioPlayerIframe.src = chrome.runtime.getURL('player.html');
 
         // Style the iframe to be completely invisible and non-interactive
         Object.assign(audioPlayerIframe.style, {
@@ -270,10 +270,12 @@
 
         try {
             showNotification('Generating speech...', 'loading');
-            const response = await browser.runtime.sendMessage({
-                action: 'generateTTS',
-                text: text
-            });
+            const response = await new Promise(resolve =>
+                chrome.runtime.sendMessage({
+                    action: 'generateTTS',
+                    text: text
+                }, resolve)
+            );
             
             if (response && !response.success) {
                 showNotification('Failed: ' + response.error, 'error');
@@ -368,7 +370,7 @@
     }
 
     // Listener for messages from the background script to play audio OR show status
-    browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.action === 'playTTSAudio' && request.audioUrl) {
             console.log("Content Script: Received 'playTTSAudio' message from background script (non-streaming).");
             playAudioInPage(request.audioUrl);

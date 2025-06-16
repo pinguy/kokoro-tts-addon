@@ -1,44 +1,30 @@
 // Background script for Kokoro TTS addon
-// This script runs continuously in the background to listen for browser events.
+// Updated for Chrome extension API
 
 // Function to create context menu items
+// Replace browser.* with chrome.*
 function createContextMenuItems() {
-    // Remove existing items first to avoid duplicates
-    browser.contextMenus.removeAll().then(() => {
-        // Create context menu item for speaking selected text.
-        // This item appears when text is selected on a webpage.
-        browser.contextMenus.create({
+    chrome.contextMenus.removeAll(() => {
+        chrome.contextMenus.create({
             id: "kokoro-tts-speak",
             title: "Speak selected text with Kokoro",
-            contexts: ["selection"] // Show only when text is selected
+            contexts: ["selection"]
         });
-        
-        // Create context menu item for speaking the entire page.
-        // This item appears when right-clicking anywhere on the page.
-        browser.contextMenus.create({
+
+        chrome.contextMenus.create({
             id: "kokoro-tts-page",
             title: "Speak entire page with Kokoro",
-            contexts: ["page"] // Show on any page
+            contexts: ["page"]
         });
     });
 }
 
-// Create context menu items when extension is installed
-browser.runtime.onInstalled.addListener(() => {
-    createContextMenuItems();
-});
-
-// Create context menu items when extension starts up (browser restart)
-browser.runtime.onStartup.addListener(() => {
-    createContextMenuItems();
-});
-
-// Also create them immediately when the script loads
+chrome.runtime.onInstalled.addListener(createContextMenuItems);
 createContextMenuItems();
 
 // Listener for context menu clicks.
 // This function is triggered when a user clicks on one of the context menu items created above.
-browser.contextMenus.onClicked.addListener(async (info, tab) => {
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     console.log("Background Script: Context menu clicked. Menu Item ID:", info.menuItemId);
     
     if (info.menuItemId === "kokoro-tts-speak") {
@@ -47,44 +33,38 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
         await speakText(info.selectionText, tab.id); 
     } else if (info.menuItemId === "kokoro-tts-page") {
         console.log("Background Script: Attempting to get entire page text from active tab.");
-        const results = await browser.tabs.executeScript(tab.id, {
-            code: `
-                (function() {
-                    const walker = document.createTreeWalker(
-                        document.body,
-                        NodeFilter.SHOW_TEXT,
-                        {
-                            acceptNode: function(node) {
-                                const parent = node.parentElement;
-                                if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
-                                    return NodeFilter.FILTER_REJECT;
-                                }
-                                return NodeFilter.FILTER_ACCEPT;
+        chrome.scripting.executeScript({
+            target: {tabId: tab.id},
+            function: () => {
+                const walker = document.createTreeWalker(
+                    document.body,
+                    NodeFilter.SHOW_TEXT,
+                    {
+                        acceptNode: function(node) {
+                            const parent = node.parentElement;
+                            if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
+                                return NodeFilter.FILTER_REJECT;
                             }
-                        }
-                    );
-                    
-                    let pageContentText = '';
-                    let node;
-                    while (node = walker.nextNode()) {
-                        const nodeText = node.textContent.trim();
-                        if (nodeText) {
-                            pageContentText += nodeText + ' ';
+                            return NodeFilter.FILTER_ACCEPT;
                         }
                     }
-                    return pageContentText.trim().substring(0, 5000); 
-                })();
-            `
+                );
+
+                let pageContentText = '';
+                let node;
+                while (node = walker.nextNode()) {
+                    const nodeText = node.textContent.trim();
+                    if (nodeText) {
+                        pageContentText += nodeText + ' ';
+                    }
+                }
+                return pageContentText.trim().substring(0, 5000);
+            }
+        }, (results) => {
+            if (results && results[0]) {
+                speakText(results[0].result, tab.id);
+            }
         });
-        
-        if (results && results[0]) {
-            console.log("Background Script: Captured page text (first 100 chars):", results[0].substring(0, 100) + '...');
-            // Call speakText and pass the tab ID for page text as well
-            await speakText(results[0], tab.id);
-        } else {
-            console.warn("Background Script: No readable text found on page for 'Speak entire page'.");
-            // Removed system notification: browser.notifications.create for this case
-        }
     }
 });
 
@@ -105,18 +85,20 @@ async function speakText(text, tabId) {
     }
 
     try {
-        const settings = await browser.storage.local.get({
-            voice: 'af_heart',
-            speed: 1.0,
-            language: 'a'
-        });
+        const settings = await new Promise(resolve =>
+            chrome.storage.local.get({
+                voice: 'af_heart',
+                speed: 1.0,
+                language: 'a'
+            }, resolve)
+        );
         
         console.log("Background Script: Sending request to TTS server with settings:", settings);
 
         // Notify content script that speech generation is starting (for in-page notification)
         if (tabId) {
             try {
-                await browser.tabs.sendMessage(tabId, { action: 'showGeneratingSpeech' });
+                await chrome.tabs.sendMessage(tabId, { action: 'showGeneratingSpeech' });
             } catch (notifyError) {
                 console.warn("Background Script: Could not send 'showGeneratingSpeech' message to content script:", notifyError);
                 // Continue execution even if notification fails, as core functionality is generation
@@ -147,7 +129,7 @@ async function speakText(text, tabId) {
             // Send audio chunk to content script
             if (tabId) {
                 try {
-                    await browser.tabs.sendMessage(tabId, {
+                    await chrome.tabs.sendMessage(tabId, {
                         action: 'streamTTSChunk',
                         chunk: value.buffer // Send ArrayBuffer
                     });
@@ -159,7 +141,7 @@ async function speakText(text, tabId) {
         
         // Signal end of stream
         if (tabId) {
-            await browser.tabs.sendMessage(tabId, {
+            await chrome.tabs.sendMessage(tabId, {
                 action: 'streamEnd'
             });
         }
@@ -167,7 +149,7 @@ async function speakText(text, tabId) {
     } catch (error) {
         console.error('TTS Streaming Error:', error);
         if (tabId) {
-            await browser.tabs.sendMessage(tabId, {
+            await chrome.tabs.sendMessage(tabId, {
                 action: 'streamError',
                 error: error.message
             });
@@ -176,7 +158,7 @@ async function speakText(text, tabId) {
 }
 
 // Handle messages from other parts of the add-on (e.g., content scripts, popup).
-browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log("Background Script: Message received from content script. Action:", request.action);
     if (request.action === 'generateTTS') {
         // When content script requests TTS, call speakText and pass the sender's tab ID.

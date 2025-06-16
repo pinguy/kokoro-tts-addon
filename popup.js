@@ -203,11 +203,13 @@ function cleanupAudioResources() {
  */
 async function loadSettings() {
     try {
-        const result = await browser.storage.local.get({
-            voice: 'af_heart', // Default voice
-            speed: 1.0,        // Default speed
-            language: 'a'      // Default language (American English)
-        });
+        const result = await new Promise(resolve =>
+            chrome.storage.local.get({
+                voice: 'af_heart', // Default voice
+                speed: 1.0,        // Default speed
+                language: 'a'      // Default language (American English)
+            }, resolve)
+        );
 
         // Only set the value if the option exists, otherwise default will be used
         if (Array.from(voiceSelect.options).some(option => option.value === result.voice)) {
@@ -235,11 +237,13 @@ async function loadSettings() {
  */
 async function saveSettings() {
     try {
-        await browser.storage.local.set({
-            voice: voiceSelect.value,
-            speed: parseFloat(speedInput.value),
-            language: langSelect.value
-        });
+        await new Promise(resolve =>
+            chrome.storage.local.set({
+                voice: voiceSelect.value,
+                speed: parseFloat(speedInput.value),
+                language: langSelect.value
+            }, resolve)
+        );
     } catch (error) {
         console.error('Failed to save settings:', error);
     }
@@ -251,19 +255,21 @@ async function saveSettings() {
  */
 async function getSelectedText() {
     try {
-        const tabs = await browser.tabs.query({active: true, currentWindow: true});
-        const results = await browser.tabs.executeScript(tabs[0].id, {
-            code: `
-                // IIFE to create a private scope for injected code
-                (function() {
+        const [tab] = await new Promise(resolve =>
+            chrome.tabs.query({active: true, currentWindow: true}, resolve)
+        );
+        const [result] = await new Promise(resolve =>
+            chrome.scripting.executeScript({
+                target: {tabId: tab.id},
+                function: () => {
                     const pageSelection = window.getSelection();
                     return pageSelection.toString().trim();
-                })(); // Immediately invoke the function
-            `
-        });
+                }
+            }, resolve)
+        );
 
-        if (results && results[0]) {
-            textInput.value = results[0];
+        if (result) {
+            textInput.value = result;
             showStatus('Selected text captured!', 'success');
         } else {
             showStatus('No text selected', 'error');
@@ -280,11 +286,13 @@ async function getSelectedText() {
  */
 async function getPageText() {
     try {
-        const tabs = await browser.tabs.query({active: true, currentWindow: true});
-        const results = await browser.tabs.executeScript(tabs[0].id, {
-            code: `
-                // IIFE to create a private scope for injected code
-                (function() {
+        const [tab] = await new Promise(resolve =>
+            chrome.tabs.query({active: true, currentWindow: true}, resolve)
+        );
+        const [result] = await new Promise(resolve =>
+            chrome.scripting.executeScript({
+                target: {tabId: tab.id},
+                function: () => {
                     const walker = document.createTreeWalker(
                         document.body,
                         NodeFilter.SHOW_TEXT,
@@ -309,12 +317,12 @@ async function getPageText() {
                     }
 
                     return pageContentText.trim().substring(0, 5000);
-                })(); // Immediately invoke the function
-            `
-        });
+                }
+            }, resolve)
+        );
 
-        if (results && results[0]) {
-            textInput.value = results[0];
+        if (result) {
+            textInput.value = result;
             showStatus('Page text captured!', 'success');
         } else {
             showStatus('No text found on page', 'error');

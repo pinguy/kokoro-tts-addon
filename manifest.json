@@ -1,5 +1,5 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "Kokoro TTS",
   "version": "3.0",
   "description": "Text-to-Speech using Kokoro model",
@@ -7,17 +7,14 @@
     "activeTab",
     "storage",
     "contextMenus",
-    "http://localhost:8000/*",
-    "notifications",
-    "webRequest",
-    "webRequestBlocking",
-    "<all_urls>"
+    "scripting",
+    "tts"
+  ],
+  "host_permissions": [
+    "http://localhost:8000/*"
   ],
   "background": {
-    "scripts": [
-      "background.js"
-    ],
-    "persistent": true
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {
@@ -32,7 +29,7 @@
       ]
     }
   ],
-  "browser_action": {
+  "action": {
     "default_popup": "popup.html",
     "default_title": "Kokoro TTS",
     "default_icon": {
@@ -44,12 +41,9 @@
     "96": "icons/icon-96.png"
   },
   "web_accessible_resources": [
-    "player.html",
-    "player.js"
-  ],
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "{a5677b62-903a-4d6e-aa24-155567aecdfb}"
+    {
+      "resources": ["player.html", "player.js"],
+      "matches": ["<all_urls>"]
     }
-  }
+  ]
 }

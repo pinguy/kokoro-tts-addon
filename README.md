@@ -1,6 +1,6 @@
 # Kokoro TTS Add-on
 
-> 🧠 Local Neural Text-to-Speech for Firefox — fast, private, offline.
+> 🧠 Local Neural Text-to-Speech for Chrome — fast, private, offline.
 
 > **Tested on a Xeon E3-1265L v3 (2013)** — Ran multiple TTS jobs in parallel with barely perceptible lag.  
 > If it works on this, it'll fly on your machine.
@@ -9,7 +9,7 @@
 
 ## 🔍 What is This?
 
-Kokoro TTS is a Firefox extension that lets you convert selected or pasted text into natural-sounding speech — without needing an internet connection.  
+Kokoro TTS is a Chrome extension that lets you convert selected or pasted text into natural-sounding speech — without needing an internet connection.
 It uses a lightweight Flask server and the Kokoro model running locally on your system.
 
 - ✅ No accounts or logins
@@ -37,11 +37,11 @@ Head to the [Releases Page](https://github.com/pinguy/kokoro-tts-addon/releases)
 - `latest kokoro-tts-addon.xpi`
 - `server.py`
 
-### 2. Install the Add-on in Firefox
+### 2. Install the Extension in Chrome
 
-- Go to `about:addons`
-- Click the gear icon → `Install Add-on From File...`
-- Select the `.xpi` you downloaded
+- Open `chrome://extensions`
+- Enable **Developer mode**
+- Click **Load unpacked** and select the extension folder
 
 ### 3. Start the Local Server
 
