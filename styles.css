@@ -2,7 +2,7 @@
  * styles.css
  *
  * This file contains general styles applied by the content script (content.js)
- * to elements injected into webpages by the Kokoro TTS Firefox add-on.
+ * to elements injected into webpages by the Kokoro TTS Chrome extension.
  */
 
 /* Basic reset for injected elements to ensure consistent styling */

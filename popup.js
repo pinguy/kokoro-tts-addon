@@ -1,4 +1,4 @@
-// Popup script for Kokoro TTS Firefox addon
+// Popup script for Kokoro TTS Chrome extension
 let currentAudio = null;
 let currentAudioBlob = null;
 let currentAudioUrl = null;
@@ -198,16 +198,18 @@ function cleanupAudioResources() {
 }
 
 /**
- * Loads user settings (voice, speed, language) from Firefox local storage
+ * Loads user settings (voice, speed, language) from Chrome local storage
  * and updates the UI elements accordingly.
  */
 async function loadSettings() {
     try {
-        const result = await browser.storage.local.get({
-            voice: 'af_heart', // Default voice
-            speed: 1.0,        // Default speed
-            language: 'a'      // Default language (American English)
-        });
+        const result = await new Promise(resolve =>
+            chrome.storage.local.get({
+                voice: 'af_heart', // Default voice
+                speed: 1.0,        // Default speed
+                language: 'a'      // Default language (American English)
+            }, resolve)
+        );
 
         // Only set the value if the option exists, otherwise default will be used
         if (Array.from(voiceSelect.options).some(option => option.value === result.voice)) {
@@ -231,15 +233,17 @@ async function loadSettings() {
 }
 
 /**
- * Saves current user settings (voice, speed, language) to Firefox local storage.
+ * Saves current user settings (voice, speed, language) to Chrome local storage.
  */
 async function saveSettings() {
     try {
-        await browser.storage.local.set({
-            voice: voiceSelect.value,
-            speed: parseFloat(speedInput.value),
-            language: langSelect.value
-        });
+        await new Promise(resolve =>
+            chrome.storage.local.set({
+                voice: voiceSelect.value,
+                speed: parseFloat(speedInput.value),
+                language: langSelect.value
+            }, resolve)
+        );
     } catch (error) {
         console.error('Failed to save settings:', error);
     }
@@ -251,26 +255,24 @@ async function saveSettings() {
  */
 async function getSelectedText() {
     try {
-        const tabs = await browser.tabs.query({active: true, currentWindow: true});
-        const results = await browser.tabs.executeScript(tabs[0].id, {
-            code: `
-                // IIFE to create a private scope for injected code
-                (function() {
-                    const pageSelection = window.getSelection();
-                    return pageSelection.toString().trim();
-                })(); // Immediately invoke the function
-            `
+        const [tab] = await new Promise(resolve =>
+            chrome.tabs.query({active: true, currentWindow: true}, resolve)
+        );
+
+        const results = await chrome.scripting.executeScript({
+            target: {tabId: tab.id},
+            func: () => window.getSelection().toString().trim()
         });
 
-        if (results && results[0]) {
-            textInput.value = results[0];
+        if (results && results[0] && results[0].result) {
+            textInput.value = results[0].result;
             showStatus('Selected text captured!', 'success');
         } else {
             showStatus('No text selected', 'error');
         }
     } catch (error) {
         console.error('Error getting selected text:', error);
-        showStatus('Failed to get selection: ' + error.message, 'error');
+        showStatus('Failed to get selection', 'error');
     }
 }
 
@@ -280,48 +282,48 @@ async function getSelectedText() {
  */
 async function getPageText() {
     try {
-        const tabs = await browser.tabs.query({active: true, currentWindow: true});
-        const results = await browser.tabs.executeScript(tabs[0].id, {
-            code: `
-                // IIFE to create a private scope for injected code
-                (function() {
-                    const walker = document.createTreeWalker(
-                        document.body,
-                        NodeFilter.SHOW_TEXT,
-                        {
-                            acceptNode: function(node) {
-                                const parent = node.parentElement;
-                                if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
-                                    return NodeFilter.FILTER_REJECT;
-                                }
-                                return NodeFilter.FILTER_ACCEPT;
-                            }
-                        }
-                    );
+        const [tab] = await new Promise(resolve =>
+            chrome.tabs.query({active: true, currentWindow: true}, resolve)
+        );
 
-                    let pageContentText = '';
-                    let node;
-                    while (node = walker.nextNode()) {
-                        const nodeText = node.textContent.trim();
-                        if (nodeText) {
-                            pageContentText += nodeText + ' ';
+        const results = await chrome.scripting.executeScript({
+            target: {tabId: tab.id},
+            func: () => {
+                const walker = document.createTreeWalker(
+                    document.body,
+                    NodeFilter.SHOW_TEXT,
+                    {
+                        acceptNode: function(node) {
+                            const parent = node.parentElement;
+                            if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
+                                return NodeFilter.FILTER_REJECT;
+                            }
+                            return NodeFilter.FILTER_ACCEPT;
                         }
                     }
+                );
 
-                    return pageContentText.trim().substring(0, 5000);
-                })(); // Immediately invoke the function
-            `
+                let pageContentText = '';
+                let node;
+                while (node = walker.nextNode()) {
+                    const nodeText = node.textContent.trim();
+                    if (nodeText) {
+                        pageContentText += nodeText + ' ';
+                    }
+                }
+                return pageContentText.trim().substring(0, 5000);
+            }
         });
 
-        if (results && results[0]) {
-            textInput.value = results[0];
+        if (results && results[0] && results[0].result) {
+            textInput.value = results[0].result;
             showStatus('Page text captured!', 'success');
         } else {
             showStatus('No text found on page', 'error');
         }
     } catch (error) {
         console.error('Error getting page text:', error);
-        showStatus('Failed to get page text: ' + error.message, 'error');
+        showStatus('Failed to get page text', 'error');
     }
 }
 

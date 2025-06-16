@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Kokoro TTS Local Server
-A local HTTP server that interfaces with the Kokoro TTS model for the Firefox addon.
+A local HTTP server that interfaces with the Kokoro TTS model for the Chrome extension.
 Enhanced with GPU/CPU detection and thread scaling.
 """
 
