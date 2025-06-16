@@ -1,4 +1,4 @@
-// Popup script for Kokoro TTS Firefox addon
+// Popup script for Kokoro TTS Chrome extension
 let currentAudio = null;
 let currentAudioBlob = null;
 let currentAudioUrl = null;
@@ -198,7 +198,7 @@ function cleanupAudioResources() {
 }
 
 /**
- * Loads user settings (voice, speed, language) from Firefox local storage
+ * Loads user settings (voice, speed, language) from Chrome local storage
  * and updates the UI elements accordingly.
  */
 async function loadSettings() {
@@ -233,7 +233,7 @@ async function loadSettings() {
 }
 
 /**
- * Saves current user settings (voice, speed, language) to Firefox local storage.
+ * Saves current user settings (voice, speed, language) to Chrome local storage.
  */
 async function saveSettings() {
     try {

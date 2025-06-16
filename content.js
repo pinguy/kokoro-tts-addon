@@ -1,4 +1,4 @@
-// Content script for Kokoro TTS addon
+// Content script for Kokoro TTS Chrome extension
 // This script is injected into every webpage to provide in-page TTS features.
 
 (function() {

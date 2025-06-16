@@ -1,4 +1,4 @@
-// Background script for Kokoro TTS addon
+// Background script for Kokoro TTS Chrome extension
 // Updated for Chrome extension API
 
 // Function to create context menu items

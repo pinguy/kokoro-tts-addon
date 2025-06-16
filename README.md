@@ -1,4 +1,4 @@
-# Kokoro TTS Add-on
+# Kokoro TTS Extension
 
 > 🧠 Local Neural Text-to-Speech for Chrome — fast, private, offline.
 
@@ -34,7 +34,7 @@ It uses a lightweight Flask server and the Kokoro model running locally on your 
 
 Head to the [Releases Page](https://github.com/pinguy/kokoro-tts-addon/releases) and grab:
 
-- `latest kokoro-tts-addon.xpi`
+- `kokoro-tts-addon.zip`
 - `server.py`
 
 ### 2. Install the Extension in Chrome
