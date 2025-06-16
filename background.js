@@ -1,23 +1,40 @@
 // Background script for Kokoro TTS addon
 // This script runs continuously in the background to listen for browser events.
 
+// Function to create context menu items
+function createContextMenuItems() {
+    // Remove existing items first to avoid duplicates
+    browser.contextMenus.removeAll().then(() => {
+        // Create context menu item for speaking selected text.
+        // This item appears when text is selected on a webpage.
+        browser.contextMenus.create({
+            id: "kokoro-tts-speak",
+            title: "Speak selected text with Kokoro",
+            contexts: ["selection"] // Show only when text is selected
+        });
+        
+        // Create context menu item for speaking the entire page.
+        // This item appears when right-clicking anywhere on the page.
+        browser.contextMenus.create({
+            id: "kokoro-tts-page",
+            title: "Speak entire page with Kokoro",
+            contexts: ["page"] // Show on any page
+        });
+    });
+}
+
+// Create context menu items when extension is installed
 browser.runtime.onInstalled.addListener(() => {
-    // Create context menu item for speaking selected text.
-    // This item appears when text is selected on a webpage.
-    browser.contextMenus.create({
-        id: "kokoro-tts-speak",
-        title: "Speak selected text with Kokoro",
-        contexts: ["selection"] // Show only when text is selected
-    });
-    
-    // Create context menu item for speaking the entire page.
-    // This item appears when right-clicking anywhere on the page.
-    browser.contextMenus.create({
-        id: "kokoro-tts-page",
-        title: "Speak entire page with Kokoro",
-        contexts: ["page"] // Show on any page
-    });
+    createContextMenuItems();
 });
+
+// Create context menu items when extension starts up (browser restart)
+browser.runtime.onStartup.addListener(() => {
+    createContextMenuItems();
+});
+
+// Also create them immediately when the script loads
+createContextMenuItems();
 
 // Listener for context menu clicks.
 // This function is triggered when a user clicks on one of the context menu items created above.
@@ -66,12 +83,7 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
             await speakText(results[0], tab.id);
         } else {
             console.warn("Background Script: No readable text found on page for 'Speak entire page'.");
-            browser.notifications.create({
-                type: 'basic',
-                iconUrl: '',
-                title: 'Kokoro TTS Warning',
-                message: 'No readable text found on this page.'
-            });
+            // Removed system notification: browser.notifications.create for this case
         }
     }
 });
@@ -88,12 +100,7 @@ async function speakText(text, tabId) {
 
     if (!text || !text.trim()) {
         console.warn("Background Script: speakText: Input text is empty or only whitespace. Not sending to server.");
-        browser.notifications.create({
-            type: 'basic',
-            iconUrl: '',
-            title: 'Kokoro TTS Warning',
-            message: 'No text selected to speak.'
-        });
+        // Removed system notification: browser.notifications.create for this case
         return;
     }
 
@@ -106,11 +113,20 @@ async function speakText(text, tabId) {
         
         console.log("Background Script: Sending request to TTS server with settings:", settings);
 
-        const response = await fetch('http://localhost:8000/generate', {
+        // Notify content script that speech generation is starting (for in-page notification)
+        if (tabId) {
+            try {
+                await browser.tabs.sendMessage(tabId, { action: 'showGeneratingSpeech' });
+            } catch (notifyError) {
+                console.warn("Background Script: Could not send 'showGeneratingSpeech' message to content script:", notifyError);
+                // Continue execution even if notification fails, as core functionality is generation
+            }
+        }
+
+        // Streaming request
+        const response = await fetch('http://localhost:8000/stream', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 text: text.trim(),
                 voice: settings.voice,
@@ -118,75 +134,44 @@ async function speakText(text, tabId) {
                 language: settings.language
             })
         });
-        
-        if (response.ok) {
-            console.log("Background Script: Server responded successfully (status 200 OK). Attempting to get audio blob.");
-            const audioBlob = await response.blob(); // Get the audio as a Blob
-            
-            // Convert Blob to Base64 data URL for sending via message
-            const reader = new FileReader();
-            reader.readAsDataURL(audioBlob); // Reads the blob as a data URL (base64)
 
-            // Return a Promise that resolves when the file is read
-            await new Promise((resolve, reject) => {
-                reader.onloadend = async () => {
-                    const audioDataUrl = reader.result; // This is the base64 data URL
-                    console.log("Background Script: Audio blob converted to data URL. Sending to content script.");
-                    
-                    if (tabId) {
-                        try {
-                            // Send the data URL to the content script of the specified tab
-                            await browser.tabs.sendMessage(tabId, {
-                                action: 'playTTSAudio',
-                                audioUrl: audioDataUrl
-                            });
-                            browser.notifications.create({
-                                type: 'basic',
-                                iconUrl: '',
-                                title: 'Kokoro TTS',
-                                message: 'Speech generated and playing!'
-                            });
-                            console.log("Background Script: Message to content script sent successfully.");
-                        } catch (msgError) {
-                            console.error("Background Script: Error sending message to content script:", msgError);
-                            browser.notifications.create({
-                                type: 'basic',
-                                iconUrl: '',
-                                title: 'Kokoro TTS Error',
-                                message: 'Speech generated but failed to play in tab. See console for details.'
-                            });
-                        }
-                    } else {
-                         // Fallback notification if no tabId (e.g. if invoked from popup, but popup handles its own playback)
-                         browser.notifications.create({
-                            type: 'basic',
-                            iconUrl: '',
-                            title: 'Kokoro TTS',
-                            message: 'Speech generated successfully!'
-                         });
-                    }
-                    resolve(); // Resolve the promise once message is sent or error handled
-                };
-                reader.onerror = (error) => {
-                    console.error("Background Script: FileReader error:", error);
-                    reject(error);
-                };
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            // Send audio chunk to content script
+            if (tabId) {
+                try {
+                    await browser.tabs.sendMessage(tabId, {
+                        action: 'streamTTSChunk',
+                        chunk: value.buffer // Send ArrayBuffer
+                    });
+                } catch (error) {
+                    console.error("Error streaming chunk:", error);
+                }
+            }
+        }
+        
+        // Signal end of stream
+        if (tabId) {
+            await browser.tabs.sendMessage(tabId, {
+                action: 'streamEnd'
             });
-            
-        } else {
-            const errorText = await response.text();
-            console.error("Background Script: Server error response:", response.status, errorText);
-            throw new Error(`Server error: ${response.status} - ${errorText}`);
         }
         
     } catch (error) {
-        console.error('Background Script: TTS Error (in speakText function):', error);
-        browser.notifications.create({
-            type: 'basic',
-            iconUrl: '',
-            title: 'Kokoro TTS Error',
-            message: `Failed to generate speech. Make sure the local server is running. Error: ${error.message}`
-        });
+        console.error('TTS Streaming Error:', error);
+        if (tabId) {
+            await browser.tabs.sendMessage(tabId, {
+                action: 'streamError',
+                error: error.message
+            });
+        }
     }
 }
 
@@ -195,6 +180,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log("Background Script: Message received from content script. Action:", request.action);
     if (request.action === 'generateTTS') {
         // When content script requests TTS, call speakText and pass the sender's tab ID.
+        // The 'Generating speech...' notification is already shown by content.js before calling this.
         speakText(request.text, sender.tab.id).then(() => {
             sendResponse({success: true});
         }).catch(error => {
