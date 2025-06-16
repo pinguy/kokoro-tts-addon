@@ -1,14 +1,17 @@
 {
   "manifest_version": 2,
   "name": "Kokoro TTS",
-  "version": "1.1",
+  "version": "3.0",
   "description": "Text-to-Speech using Kokoro model",
   "permissions": [
     "activeTab",
     "storage",
     "contextMenus",
     "http://localhost:8000/*",
-    "notifications"
+    "notifications",
+    "webRequest",
+    "webRequestBlocking",
+    "<all_urls>"
   ],
   "background": {
     "scripts": [
