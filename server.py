@@ -298,13 +298,10 @@ def stream_speech():
         def generate():
             try:
                 with torch.no_grad():
-                    # Updated split_pattern to ensure more explicit line break handling and grouped punctuation.
-                    # r'[\.?!]+|[;,:]|\n+' will split by:
-                    #   - one or more periods, question marks, or exclamation marks (e.g., "...", "!")
-                    #   - single commas, semicolons, or colons
-                    #   - one or more newlines (e.g., "\n", "\n\n")
+                    # Split only by one or more newline characters.
+                    # This means each line break will define a new chunk.
                     for i, (_, _, audio) in enumerate(
-                        pipeline(text, voice=voice, speed=speed, split_pattern=r'[\.?!]+|[;,:]|\n+') 
+                        pipeline(text, voice=voice, speed=speed, split_pattern=r'\n+') 
                     ):
                         # Convert to raw PCM (16-bit, 22.05kHz, mono)
                         pcm_data = (audio.numpy() * 32767).astype('int16').tobytes()
