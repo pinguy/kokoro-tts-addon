@@ -3,206 +3,629 @@
 <head>
     <meta charset="utf-8">
     <style>
-        body {
-            width: 350px;
-            padding: 15px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        /* General Reset & Box Sizing */
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+
+        /* Body Styling */
+        body {
+            width: 400px; /* Kept original width */
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', system-ui, sans-serif;
+            background: #0a0a0a; /* Dark background from new reference */
+            color: #ffffff; /* White text */
+            margin: 0;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            /* No min-height/max-height to keep original layout flexibility */
+        }
+
+        /* Container Styling (takes the main gradient background) */
+        .container {
+            /* Applied gradient from the new reference */
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top border line from the new reference example */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #64ffda, transparent); /* Teal gradient */
+            opacity: 0.6;
+        }
+
+        /* Header Styling */
         .header {
+            padding: 16px 20px 14px; /* Kept original padding */
             text-align: center;
-            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.02); /* Lighter transparent background */
+            backdrop-filter: blur(10px); /* Adjusted blur */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Lighter border */
+            position: relative;
+            flex-shrink: 0;
         }
+
+        /* Header Bottom Underline Gradient - Kept original structure, updated colors */
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, #64ffda, #00bcd4); /* Teal to Cyan Gradient */
+            border-radius: 1px;
+        }
+
+        /* Logo Styling */
         .logo {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px; /* Kept original gap */
+            font-size: 20px; /* Kept original font size */
+            font-weight: 700;
+            margin-bottom: 4px; /* Kept original margin */
         }
+
+        .logo-icon {
+            /* Makes the emoji white and applies the shadow */
+            font-size: 22px; /* Kept original font size for emoji */
+            filter: brightness(0) invert(1) drop-shadow(0 0 10px rgba(100, 255, 218, 0.5)); /* White filter + Teal shadow */
+            display: flex; /* Ensures the filter works correctly */
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-text {
+            /* Applies the gradient only to the text */
+            background: linear-gradient(135deg, #64ffda, #00bcd4); /* Teal to Cyan Gradient */
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
         .subtitle {
-            font-size: 12px;
-            opacity: 0.8;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 12px;
+            font-size: 11px; /* Kept original font size */
+            color: #94a3b8; /* Blue-gray for subtitle from new reference */
             font-weight: 500;
         }
+
+        /* Main Content Area */
+        .content {
+            flex: 1;
+            padding: 16px 20px; /* Kept original padding */
+            display: flex;
+            flex-direction: column;
+            gap: 14px; /* Kept original gap */
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        /* Quick Actions Section */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px; /* Kept original gap */
+            flex-shrink: 0;
+        }
+
+        .quick-btn {
+            padding: 8px 6px; /* Kept original padding */
+            font-size: 10px; /* Kept original font size */
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05); /* Lighter transparent background */
+            color: #e2e8f0; /* Light text */
+            border: 1px solid rgba(255, 255, 255, 0.1); /* Lighter border */
+            border-radius: 6px; /* Kept original border-radius */
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* Adjusted transition duration slightly */
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            text-transform: uppercase; /* Added uppercase from new reference */
+            letter-spacing: 0.5px; /* Added letter-spacing from new reference */
+        }
+
+        .quick-btn:hover {
+            background: rgba(100, 255, 218, 0.1); /* Teal transparent on hover */
+            border-color: rgba(100, 255, 218, 0.3); /* Teal border on hover */
+            transform: translateY(-1px);
+            color: #FFFFFF; /* White text on hover */
+            box-shadow: 0 8px 25px rgba(100, 255, 218, 0.15); /* Teal shadow on hover */
+        }
+
+        /* Form Sections */
+        .form-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px; /* Kept original gap */
+            flex: 1;
+            min-height: 0;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px; /* Kept original gap */
+        }
+
+        .form-label {
+            font-size: 12px; /* Kept original font size */
+            font-weight: 600;
+            color: #cbd5e1; /* Lighter blue-gray */
+            display: flex;
+            align-items: center;
+            gap: 6px; /* Kept original gap */
+            text-transform: uppercase; /* Added uppercase from new reference */
+            letter-spacing: 0.5px; /* Added letter-spacing from new reference */
+        }
+
+        .form-label::before {
+            content: '';
+            width: 2px; /* Kept original width */
+            height: 10px; /* Kept original height */
+            background: linear-gradient(135deg, #64ffda, #00bcd4); /* Teal to Cyan Gradient */
+            border-radius: 1px; /* Kept original border-radius */
+            margin-right: 8px; /* Adjusted margin from new reference */
+        }
+
+        /* Textarea Styling */
         textarea {
             width: 100%;
-            height: 80px;
-            padding: 8px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            resize: vertical;
-            box-sizing: border-box;
+            height: 90px; /* Kept original height */
+            max-height: 90px; /* Kept original max-height */
+            min-height: 90px; /* Kept original min-height */
+            padding: 10px 12px; /* Kept original padding */
+            background: rgba(15, 23, 42, 0.8); /* Darker transparent background */
+            border: 1px solid rgba(255, 255, 255, 0.1); /* Lighter border */
+            border-radius: 8px; /* Kept original border-radius */
+            font-size: 13px; /* Kept original font size */
+            font-family: inherit;
+            color: #ffffff;
+            resize: none; /* Kept original resize */
+            transition: all 0.2s ease; /* Adjusted transition duration slightly */
+            line-height: 1.4;
+            overflow-y: auto;
+            overflow-x: hidden;
+            word-wrap: break-word;
         }
-        select, input {
+
+        textarea:focus {
+            outline: none;
+            border-color: #64ffda; /* Teal border on focus */
+            box-shadow: 0 0 0 2px rgba(100, 255, 218, 0.1); /* Teal shadow on focus */
+            background: rgba(15, 23, 42, 0.95); /* Even darker on focus */
+        }
+
+        textarea::placeholder {
+            color: #64748b; /* Darker blue-gray placeholder */
+        }
+
+        /* Custom scrollbar for textarea */
+        textarea::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        textarea::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        textarea::-webkit-scrollbar-thumb {
+            background: rgba(100, 255, 218, 0.3); /* Teal scrollbar thumb */
+            border-radius: 3px;
+        }
+
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 255, 218, 0.5); /* Darker teal on hover */
+        }
+
+        /* Select Input Styling */
+        select {
             width: 100%;
-            padding: 8px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            box-sizing: border-box;
-        }
-        .controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        .controls > * {
-            flex: 1;
-        }
-        button {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
+            padding: 10px 12px; /* Kept original padding */
+            background: rgba(15, 23, 42, 0.8); /* Darker transparent background */
+            border: 1px solid rgba(255, 255, 255, 0.1); /* Lighter border */
+            border-radius: 8px; /* Kept original border-radius */
+            font-size: 13px; /* Kept original font size */
+            color: #ffffff;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s ease; /* Adjusted transition duration slightly */
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 10px center;
+            background-repeat: no-repeat;
+            background-size: 14px;
+            padding-right: 35px;
         }
-        .primary-btn {
-            background: #4CAF50;
-            color: white;
+
+        select:focus {
+            outline: none;
+            border-color: #64ffda; /* Teal border on focus */
+            box-shadow: 0 0 0 2px rgba(100, 255, 218, 0.1); /* Teal shadow on focus */
         }
-        .primary-btn:hover {
-            background: #45a049;
-        }
-        .primary-btn:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
-        }
-        .secondary-btn {
-            background: rgba(255,255,255,0.2);
-            color: white;
-        }
-        .secondary-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        .download-btn {
-            background: #2196F3;
-            color: white;
-        }
-        .download-btn:hover {
-            background: #1976D2;
-        }
-        .download-btn:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
-        }
-        .status {
-            text-align: center;
-            font-size: 12px;
+
+        select option {
+            background: #1B2A41; /* Darker background for options */
+            color: #FFFFFF;
             padding: 8px;
-            border-radius: 4px;
-            margin-top: 10px;
         }
-        .status.success { background: rgba(76, 175, 80, 0.2); }
-        .status.error { background: rgba(244, 67, 54, 0.2); }
-        .status.loading { background: rgba(255, 193, 7, 0.2); }
-        .quick-actions {
+
+        /* Controls Row (Voice and Speed) */
+        .controls-row { /* Kept original class name */
+            display: grid;
+            grid-template-columns: 1fr 100px;
+            gap: 12px; /* Kept original gap */
+            align-items: end;
+        }
+
+        .speed-control {
+            position: relative;
+        }
+
+        .speed-header {
             display: flex;
-            gap: 5px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .speed-value {
+            background: rgba(100, 255, 218, 0.2); /* Teal transparent background */
+            color: #64ffda; /* Teal text */
+            padding: 1px 6px; /* Kept original padding */
+            border-radius: 4px;
+            font-size: 10px; /* Kept original font size */
+            font-weight: 600;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+
+        /* Range Slider Styling */
+        input[type="range"] {
+            width: 100%;
+            height: 4px; /* Kept original height */
+            background: rgba(255, 255, 255, 0.1); /* Lighter transparent track */
+            border-radius: 2px;
+            border: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 14px; /* Kept original width */
+            height: 14px; /* Kept original height */
+            border-radius: 50%;
+            background: linear-gradient(135deg, #64ffda, #00bcd4); /* Teal to Cyan Gradient Thumb */
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(100, 255, 218, 0.3); /* Teal shadow */
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 3px 8px rgba(100, 255, 218, 0.4); /* Larger teal shadow on hover */
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #64ffda, #00bcd4); /* Teal to Cyan Gradient Thumb */
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(100, 255, 218, 0.3); /* Teal shadow */
+        }
+
+        /* Action Buttons Container */
+        .action-buttons {
+            display: flex;
+            flex-direction: column; /* Kept original flex direction */
+            gap: 8px; /* Kept original gap */
+            flex-shrink: 0;
+        }
+
+        /* Base Button Styling */
+        button {
+            padding: 10px 16px; /* Kept original padding */
+            border: none;
+            border-radius: 8px; /* Kept original border-radius */
+            font-size: 13px; /* Kept original font size */
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); /* Adjusted transition duration slightly */
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            text-transform: uppercase; /* Added uppercase from new reference */
+            letter-spacing: 0.5px; /* Added letter-spacing from new reference */
+        }
+
+        /* Primary Button (Generate Speech) */
+        .primary-btn {
+            background: linear-gradient(135deg, #64ffda, #00bcd4); /* Teal to Cyan Gradient */
+            color: #0a0a0a; /* Dark text */
+            box-shadow: 0 3px 15px rgba(100, 255, 218, 0.3); /* Teal shadow */
+            font-weight: 700;
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(100, 255, 218, 0.4); /* Larger teal shadow on hover */
+        }
+
+        .primary-btn:active {
+            transform: translateY(0);
+        }
+
+        .primary-btn:disabled {
+            background: rgba(255, 255, 255, 0.1); /* Toned down white */
+            color: #64748b; /* Darker blue-gray text */
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Secondary Button (Stop, Replay) */
+        .secondary-btn {
+            background: rgba(239, 68, 68, 0.2); /* Red transparent */
+            color: #fca5a5; /* Light red text */
+            border: 1px solid rgba(239, 68, 68, 0.3); /* Red border */
+        }
+
+        .secondary-btn:hover {
+            background: rgba(239, 68, 68, 0.3); /* Darker red on hover */
+            transform: translateY(-1px);
+        }
+
+        .control-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        /* Download Button */
+        .download-btn {
+            background: rgba(59, 130, 246, 0.2); /* Blue transparent */
+            color: #93c5fd; /* Light blue text */
+            font-weight: 600;
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
             margin-bottom: 10px;
         }
-        .quick-btn {
-            flex: 1;
-            padding: 6px;
-            font-size: 11px;
-            background: rgba(255,255,255,0.1);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+
+        .download-btn:hover {
+            background: rgba(59, 130, 246, 0.3); /* Darker blue on hover */
+            transform: translateY(-1px);
         }
-        .quick-btn:hover {
-            background: rgba(255,255,255,0.2);
+
+        /* Replay Button (specific styling for consistency) */
+        .replay-btn {
+            background: rgba(59, 130, 246, 0.2); /* Blue transparent */
+            color: #93c5fd; /* Light blue text */
+            border: 1px solid rgba(59, 130, 246, 0.3); /* Blue border */
         }
-        .audio-controls {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
+
+        .replay-btn:hover {
+            background: rgba(59, 130, 246, 0.3); /* Darker blue on hover */
+            transform: translateY(-1px);
         }
-        .audio-controls button {
-            flex: 1;
-            padding: 8px 12px;
-            font-size: 12px;
+
+        /* Status Messages */
+        .status {
+            text-align: center;
+            font-size: 11px; /* Kept original font size */
+            padding: 8px 12px; /* Kept original padding */
+            border-radius: 6px; /* Kept original border-radius */
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            border: 1px solid transparent;
+            flex-shrink: 0;
+        }
+
+        .status.success {
+            background: rgba(34, 197, 94, 0.15); /* Green */
+            color: #86efac;
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .status.error {
+            background: rgba(239, 68, 68, 0.15); /* Red */
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .status.loading {
+            background: rgba(245, 158, 11, 0.15); /* Yellow loading status */
+            color: #fcd34d;
+            border-color: rgba(245, 158, 11, 0.3);
+            position: relative;
+        }
+
+        .status.loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            width: 10px; /* Kept original width */
+            height: 10px; /* Kept original height */
+            border: 2px solid transparent;
+            border-top: 2px solid #fcd34d; /* Yellow spinner */
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            transform: translateY(-50%);
+        }
+
+        @keyframes spin {
+            to { transform: translateY(-50%) rotate(360deg); }
+        }
+
+        /* Audio Player Styling */
+        .audio-player {
+            width: 100%;
+            border-radius: 8px; /* Kept original border-radius */
+            background: rgba(255, 255, 255, 0.05); /* Lighter transparent background */
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            height: 40px; /* Kept original height */
+            flex-shrink: 0;
+            margin-top:10px; /* Kept original margin */
+        }
+
+        /* Scrollbar styling for content area */
+        .content::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .content::-webkit-scrollbar-thumb {
+            background: rgba(100, 255, 218, 0.3); /* Teal scrollbar thumb */
+            border-radius: 2px;
+        }
+
+        .content::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 255, 218, 0.5); /* Darker teal on hover */
+        }
+
+        /* Animations */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            animation: slideInUp 0.3s ease-out;
+        }
+
+        .form-group:nth-child(1) { animation-delay: 0.05s; }
+        .form-group:nth-child(2) { animation-delay: 0.1s; }
+        .form-group:nth-child(3) { animation-delay: 0.15s; }
+        .form-group:nth-child(4) { animation-delay: 0.2s; }
+
+        /* Hide elements initially */
+        #audioControls, #stopBtn, #audioPlayer, #status {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">🎙️ Kokoro TTS</div>
-        <div class="subtitle">High-quality neural text-to-speech</div>
-    </div>
+    <div class="background"></div>
     
-    <div class="quick-actions">
-        <button class="quick-btn" id="getSelection">Get Selection</button>
-        <button class="quick-btn" id="getPage">Get Page Text</button>
-        <button class="quick-btn" id="clearText">Clear</button>
-    </div>
-    
-    <div class="form-group">
-        <label for="textInput">Text to speak:</label>
-        <textarea id="textInput" placeholder="Enter text here or use quick actions above..."></textarea>
-    </div>
-    
-    <div class="controls">
-        <div class="form-group">
-            <label for="voiceSelect">Voice:</label>
-            <select id="voiceSelect">
-                <option value="af_heart">American Female (Heart)</option>
-                <option value="af_sarah">American Female (Sarah)</option>
-                <option value="af_sky">American Female (Sky)</option>
-                <option value="am_adam">American Male (Adam)</option>
-                <option value="am_michael">American Male (Michael)</option>
-                <option value="bf_emma">British Female (Emma)</option>
-                <option value="bf_isabella">British Female (Isabella)</option>
-                <option value="bm_george">British Male (George)</option>
-                <option value="bm_lewis">British Male (Lewis)</option>
-            </select>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <span class="logo-icon">🎙️</span>
+                <span class="logo-text">Kokoro TTS</span>
+            </div>
+            <div class="subtitle">Neural text-to-speech synthesis</div>
         </div>
         
-        <div class="form-group">
-            <label for="speedInput">Speed:</label>
-            <input type="range" id="speedInput" min="0.5" max="2" step="0.1" value="1">
-            <span id="speedValue">1.0x</span>
-        </div>
-    </div>
-    
-    <div class="form-group">
-        <label for="langSelect">Language:</label>
-        <select id="langSelect">
-            <option value="a">🇺🇸 American English</option>
-            <option value="b">🇬🇧 British English</option>
-            <option value="e">🇪🇸 Spanish</option>
-            <option value="f">🇫🇷 French</option>
-            <option value="h">🇮🇳 Hindi</option>
-            <option value="i">🇮🇹 Italian</option>
-            <option value="j">🇯🇵 Japanese</option>
-            <option value="p">🇧🇷 Portuguese (BR)</option>
-            <option value="z">🇨🇳 Mandarin Chinese</option>
-        </select>
-    </div>
-    
+        <div class="content">
+            <div class="quick-actions">
+                <button class="quick-btn" id="getSelection">
+                    <span>📋</span>
+                    <span>Selection</span>
+                </button>
+                <button class="quick-btn" id="getPage">
+                    <span>📄</span>
+                    <span>Page Text</span>
+                </button>
+                <button class="quick-btn" id="clearText">
+                    <span>🗑️</span>
+                    <span>Clear</span>
+                </button>
+            </div>
+            
+            <div class="form-section">
+                <div class="form-group">
+                    <label class="form-label" for="textInput">Text to speak</label>
+                    <textarea id="textInput" placeholder="Enter text here or use quick actions above..."></textarea>
+                </div>
+                
+                <div class="controls-row">
+                    <div class="form-group">
+                        <label class="form-label" for="voiceSelect">Voice</label>
+                        <select id="voiceSelect">
+                            <option value="af_heart">🇺🇸 American Female (Heart)</option>
+                            <option value="af_sarah">🇺🇸 American Female (Sarah)</option>
+                            <option value="af_sky">🇺🇸 American Female (Sky)</option>
+                            <option value="am_adam">🇺🇸 American Male (Adam)</option>
+                            <option value="am_michael">🇺🇸 American Male (Michael)</option>
+                            <option value="bf_emma">🇬🇧 British Female (Emma)</option>
+                            <option value="bf_isabella">🇬🇧 British Female (Isabella)</option>
+                            <option value="bm_george">🇬🇧 British Male (George)</option>
+                            <option value="bm_lewis">🇬🇧 British Male (Lewis)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group speed-control">
+                        <div class="speed-header">
+                            <label class="form-label" for="speedInput">Speed</label>
+                            <span class="speed-value" id="speedValue">1.0x</span>
+                        </div>
+                        <input type="range" id="speedInput" min="0.5" max="2" step="0.1" value="1">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="langSelect">Language</label>
+                    <select id="langSelect">
+                        <option value="a">🇺🇸 American English</option>
+                        <option value="b">🇬🇧 British English</option>
+                        <option value="e">🇪🇸 Spanish</option>
+                        <option value="f">🇫🇷 French</option>
+                        <option value="h">🇮🇳 Hindi</option>
+                        <option value="i">🇮🇹 Italian</option>
+                        <option value="j">🇯🇵 Japanese</option>
+                        <option value="p">🇧🇷 Portuguese (BR)</option>
+                        <option value="z">🇨🇳 Mandarin Chinese</option>
+                    </select>
+                </div>
+            </div>
+            
     <button id="speakBtn" class="primary-btn">🎵 Generate Speech</button>
     <button id="stopBtn" class="secondary-btn" style="display:none;">⏹️ Stop</button>
     
-    <div id="status" class="status" style="display:none;"></div>
-    
-    <audio id="audioPlayer" controls style="width:100%; margin-top:10px; display:none;"></audio>
-    
     <div class="audio-controls" id="audioControls" style="display:none;">
         <button id="downloadBtn" class="download-btn">📥 Download</button>
+        <audio id="audioPlayer" controls style="width:100%; margin-top:10px; display:none;"></audio>
     </div>
+    <div id="status" class="status" style="display:none;"></div>
+    </div>
+    <button id="replayBtn" class="secondary-btn" style="display:none;"></div>
     
-    <script src="popup.js"></script>
+        <script src="popup.js"></script>
 </body>
 </html>
