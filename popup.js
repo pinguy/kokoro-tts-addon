@@ -1,5 +1,7 @@
 // Popup script for Kokoro TTS Firefox addon
 let currentAudio = null;
+let currentAudioBlob = null;
+let currentAudioUrl = null;
 let isGenerating = false;
 
 // DOM elements
@@ -12,6 +14,9 @@ const speakBtn = document.getElementById('speakBtn');
 const stopBtn = document.getElementById('stopBtn');
 const status = document.getElementById('status');
 const audioPlayer = document.getElementById('audioPlayer');
+const audioControls = document.getElementById('audioControls');
+const downloadBtn = document.getElementById('downloadBtn');
+const replayBtn = document.getElementById('replayBtn');
 
 // Quick action buttons
 const getSelectionBtn = document.getElementById('getSelection');
@@ -62,7 +67,6 @@ const LANGUAGE_DISPLAY_NAMES = {
     'z': '🇨🇳 Mandarin Chinese'
 };
 
-
 // Initialize on DOM content loaded
 document.addEventListener('DOMContentLoaded', async () => {
     await populateDropdownsFromSever(); // Populate dropdowns first
@@ -84,10 +88,17 @@ function setupEventListeners() {
     speakBtn.addEventListener('click', generateSpeech);
     stopBtn.addEventListener('click', stopSpeech);
 
+    // Audio control buttons
+    downloadBtn.addEventListener('click', downloadAudio);
+    replayBtn.addEventListener('click', replayAudio);
+
     // Quick action buttons
     getSelectionBtn.addEventListener('click', getSelectedText);
     getPageBtn.addEventListener('click', getPageText);
-    clearTextBtn.addEventListener('click', () => textInput.value = '');
+    clearTextBtn.addEventListener('click', () => {
+        textInput.value = '';
+        hideAudioControls();
+    });
 
     // Auto-save settings when voice, speed, or language selection changes
     [voiceSelect, speedInput, langSelect].forEach(element => {
@@ -99,6 +110,91 @@ function setupEventListeners() {
         this.style.height = 'auto'; // Reset height to recalculate
         this.style.height = this.scrollHeight + 'px'; // Set height to scroll height
     });
+
+    // Audio player event listeners
+    audioPlayer.addEventListener('ended', () => {
+        resetUI();
+    });
+
+    audioPlayer.addEventListener('loadstart', () => {
+        showAudioControls();
+    });
+}
+
+/**
+ * Shows the audio control buttons (download/replay)
+ */
+function showAudioControls() {
+    audioControls.style.display = 'block';
+    downloadBtn.disabled = !currentAudioBlob;
+}
+
+/**
+ * Hides the audio control buttons
+ */
+function hideAudioControls() {
+    audioControls.style.display = 'none';
+    cleanupAudioResources();
+}
+
+/**
+ * Downloads the current audio file
+ */
+function downloadAudio() {
+    if (!currentAudioBlob) {
+        showStatus('No audio to download', 'error');
+        return;
+    }
+
+    try {
+        // Create filename with timestamp and voice info
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+        const voice = voiceSelect.options[voiceSelect.selectedIndex].text.replace(/[^a-zA-Z0-9]/g, '_');
+        const filename = `kokoro_tts_${voice}_${timestamp}.wav`;
+
+        // Create download link
+        const downloadUrl = URL.createObjectURL(currentAudioBlob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        // Clean up the download URL
+        setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+
+        showStatus('Audio downloaded successfully!', 'success');
+    } catch (error) {
+        console.error('Download error:', error);
+        showStatus('Failed to download audio', 'error');
+    }
+}
+
+/**
+ * Replays the current audio
+ */
+function replayAudio() {
+    if (audioPlayer.src) {
+        audioPlayer.currentTime = 0;
+        audioPlayer.play();
+        showStatus('Replaying audio...', 'success');
+    } else {
+        showStatus('No audio to replay', 'error');
+    }
+}
+
+/**
+ * Cleans up audio resources (URLs and references)
+ */
+function cleanupAudioResources() {
+    if (currentAudioUrl) {
+        URL.revokeObjectURL(currentAudioUrl);
+        currentAudioUrl = null;
+    }
+    currentAudioBlob = null;
+    audioPlayer.src = '';
+    audioPlayer.style.display = 'none';
 }
 
 /**
@@ -304,6 +400,10 @@ async function generateSpeech() {
 
     if (isGenerating) return;
 
+    // Clean up previous audio resources
+    cleanupAudioResources();
+    hideAudioControls();
+
     isGenerating = true;
     speakBtn.style.display = 'none';
     stopBtn.style.display = 'block';
@@ -330,23 +430,23 @@ async function generateSpeech() {
         const audioBlob = await response.blob();
         const audioUrl = URL.createObjectURL(audioBlob);
 
+        // Store references for download functionality
+        currentAudioBlob = audioBlob;
+        currentAudioUrl = audioUrl;
+
         // Play audio
         audioPlayer.src = audioUrl;
         audioPlayer.style.display = 'block';
         audioPlayer.play();
 
         currentAudio = audioPlayer;
-        showStatus('Speech generated successfully!', 'success');
-
-        // Clean up the object URL when audio finishes playing to release memory
-        audioPlayer.addEventListener('ended', () => {
-            URL.revokeObjectURL(audioUrl);
-            resetUI();
-        }, { once: true });
+        showStatus('Speech generated successfully! 🎉', 'success');
+        showAudioControls();
 
     } catch (error) {
         console.error('TTS Error:', error);
         showStatus('Failed to generate speech: ' + error.message, 'error');
+        cleanupAudioResources();
     } finally {
         isGenerating = false;
         if (!currentAudio || currentAudio.paused) {
