@@ -26,45 +26,50 @@ createContextMenuItems();
 // This function is triggered when a user clicks on one of the context menu items created above.
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     console.log("Background Script: Context menu clicked. Menu Item ID:", info.menuItemId);
-    
+
     if (info.menuItemId === "kokoro-tts-speak") {
-        console.log("Background Script: Attempting to speak selected text from context menu. Selection:", info.selectionText ? info.selectionText.substring(0, 50) + '...' : '[Empty]');
-        // Call speakText and pass the tab ID so we know where to send the audio back
-        await speakText(info.selectionText, tab.id); 
+        if (info.selectionText) {
+            console.log("Background Script: Attempting to speak selected text from context menu. Selection:", info.selectionText.substring(0, 50) + '...');
+            await speakText(info.selectionText, tab.id);
+        }
     } else if (info.menuItemId === "kokoro-tts-page") {
         console.log("Background Script: Attempting to get entire page text from active tab.");
-        chrome.scripting.executeScript({
-            target: {tabId: tab.id},
-            function: () => {
-                const walker = document.createTreeWalker(
-                    document.body,
-                    NodeFilter.SHOW_TEXT,
-                    {
-                        acceptNode: function(node) {
-                            const parent = node.parentElement;
-                            if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
-                                return NodeFilter.FILTER_REJECT;
+        try {
+            const results = await chrome.scripting.executeScript({
+                target: {tabId: tab.id},
+                func: () => {
+                    const walker = document.createTreeWalker(
+                        document.body,
+                        NodeFilter.SHOW_TEXT,
+                        {
+                            acceptNode: function(node) {
+                                const parent = node.parentElement;
+                                if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
+                                    return NodeFilter.FILTER_REJECT;
+                                }
+                                return NodeFilter.FILTER_ACCEPT;
                             }
-                            return NodeFilter.FILTER_ACCEPT;
+                        }
+                    );
+
+                    let pageContentText = '';
+                    let node;
+                    while (node = walker.nextNode()) {
+                        const nodeText = node.textContent.trim();
+                        if (nodeText) {
+                            pageContentText += nodeText + ' ';
                         }
                     }
-                );
-
-                let pageContentText = '';
-                let node;
-                while (node = walker.nextNode()) {
-                    const nodeText = node.textContent.trim();
-                    if (nodeText) {
-                        pageContentText += nodeText + ' ';
-                    }
+                    return pageContentText.trim().substring(0, 5000);
                 }
-                return pageContentText.trim().substring(0, 5000);
+            });
+
+            if (results && results[0] && results[0].result) {
+                await speakText(results[0].result, tab.id);
             }
-        }, (results) => {
-            if (results && results[0]) {
-                speakText(results[0].result, tab.id);
-            }
-        });
+        } catch (error) {
+            console.error("Error getting page text:", error);
+        }
     }
 });
 

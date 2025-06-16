@@ -371,43 +371,42 @@
 
     // Listener for messages from the background script to play audio OR show status
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.action === 'playTTSAudio' && request.audioUrl) {
-            console.log("Content Script: Received 'playTTSAudio' message from background script (non-streaming).");
-            playAudioInPage(request.audioUrl);
-            // Update the in-page notification when audio data is received and playback is initiated
-            showNotification('Speech generated and now playing! 🎉', 'success');
-            sendResponse({success: true}); // Acknowledge receipt
-            return true; // Indicate async response
-        } else if (request.action === 'showGeneratingSpeech') {
-            console.log("Content Script: Received 'showGeneratingSpeech' message from background script.");
-            // For streaming, this notification is shown before fetch starts.
-            // For non-streaming, it's shown here.
-            showNotification('Generating speech...', 'loading');
-            sendResponse({success: true});
-            return true;
-        } else if (request.action === 'streamTTSChunk') {
-            audioQueue.push(request.chunk);
-            processQueue();
-            sendResponse({success: true}); // Acknowledge receipt of chunk
-            return true;
-        }
-        else if (request.action === 'streamEnd') {
-            // Wait for queue to finish playing before showing final message
-            const checkPlayback = setInterval(() => {
-                if (audioQueue.length === 0 && !isPlaying) {
-                    clearInterval(checkPlayback);
-                    showNotification('Speech stream completed! 🎉', 'success');
+        const handleRequest = async () => {
+            try {
+                if (request.action === 'playTTSAudio' && request.audioUrl) {
+                    console.log("Content Script: Received 'playTTSAudio' message from background script (non-streaming).");
+                    playAudioInPage(request.audioUrl);
+                    showNotification('Speech generated and now playing! 🎉', 'success');
+                    return {success: true};
+                } else if (request.action === 'showGeneratingSpeech') {
+                    console.log("Content Script: Received 'showGeneratingSpeech' message from background script.");
+                    showNotification('Generating speech...', 'loading');
+                    return {success: true};
+                } else if (request.action === 'streamTTSChunk') {
+                    audioQueue.push(request.chunk);
+                    await processQueue();
+                    return {success: true};
+                } else if (request.action === 'streamEnd') {
+                    const checkPlayback = setInterval(() => {
+                        if (audioQueue.length === 0 && !isPlaying) {
+                            clearInterval(checkPlayback);
+                            showNotification('Speech stream completed! 🎉', 'success');
+                        }
+                    }, 100);
+                    return {success: true};
+                } else if (request.action === 'streamError') {
+                    stopStreamingAudio();
+                    showNotification(`Speech stream error: ${request.error}`, 'error');
+                    return {success: true};
                 }
-            }, 100);
-            sendResponse({success: true});
-            return true;
-        }
-        else if (request.action === 'streamError') {
-            stopStreamingAudio(); // Ensure playback stops on error
-            showNotification(`Speech stream error: ${request.error}`, 'error');
-            sendResponse({success: true});
-            return true;
-        }
+            } catch (error) {
+                console.error("Message handling error:", error);
+                return {success: false, error: error.message};
+            }
+        };
+
+        handleRequest().then(sendResponse);
+        return true; // Required for async sendResponse
     });
     
     // Listen for escape key to stop streaming audio

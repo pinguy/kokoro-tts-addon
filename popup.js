@@ -258,25 +258,21 @@ async function getSelectedText() {
         const [tab] = await new Promise(resolve =>
             chrome.tabs.query({active: true, currentWindow: true}, resolve)
         );
-        const [result] = await new Promise(resolve =>
-            chrome.scripting.executeScript({
-                target: {tabId: tab.id},
-                function: () => {
-                    const pageSelection = window.getSelection();
-                    return pageSelection.toString().trim();
-                }
-            }, resolve)
-        );
 
-        if (result) {
-            textInput.value = result;
+        const results = await chrome.scripting.executeScript({
+            target: {tabId: tab.id},
+            func: () => window.getSelection().toString().trim()
+        });
+
+        if (results && results[0] && results[0].result) {
+            textInput.value = results[0].result;
             showStatus('Selected text captured!', 'success');
         } else {
             showStatus('No text selected', 'error');
         }
     } catch (error) {
         console.error('Error getting selected text:', error);
-        showStatus('Failed to get selection: ' + error.message, 'error');
+        showStatus('Failed to get selection', 'error');
     }
 }
 
@@ -289,47 +285,45 @@ async function getPageText() {
         const [tab] = await new Promise(resolve =>
             chrome.tabs.query({active: true, currentWindow: true}, resolve)
         );
-        const [result] = await new Promise(resolve =>
-            chrome.scripting.executeScript({
-                target: {tabId: tab.id},
-                function: () => {
-                    const walker = document.createTreeWalker(
-                        document.body,
-                        NodeFilter.SHOW_TEXT,
-                        {
-                            acceptNode: function(node) {
-                                const parent = node.parentElement;
-                                if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
-                                    return NodeFilter.FILTER_REJECT;
-                                }
-                                return NodeFilter.FILTER_ACCEPT;
-                            }
-                        }
-                    );
 
-                    let pageContentText = '';
-                    let node;
-                    while (node = walker.nextNode()) {
-                        const nodeText = node.textContent.trim();
-                        if (nodeText) {
-                            pageContentText += nodeText + ' ';
+        const results = await chrome.scripting.executeScript({
+            target: {tabId: tab.id},
+            func: () => {
+                const walker = document.createTreeWalker(
+                    document.body,
+                    NodeFilter.SHOW_TEXT,
+                    {
+                        acceptNode: function(node) {
+                            const parent = node.parentElement;
+                            if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
+                                return NodeFilter.FILTER_REJECT;
+                            }
+                            return NodeFilter.FILTER_ACCEPT;
                         }
                     }
+                );
 
-                    return pageContentText.trim().substring(0, 5000);
+                let pageContentText = '';
+                let node;
+                while (node = walker.nextNode()) {
+                    const nodeText = node.textContent.trim();
+                    if (nodeText) {
+                        pageContentText += nodeText + ' ';
+                    }
                 }
-            }, resolve)
-        );
+                return pageContentText.trim().substring(0, 5000);
+            }
+        });
 
-        if (result) {
-            textInput.value = result;
+        if (results && results[0] && results[0].result) {
+            textInput.value = results[0].result;
             showStatus('Page text captured!', 'success');
         } else {
             showStatus('No text found on page', 'error');
         }
     } catch (error) {
         console.error('Error getting page text:', error);
-        showStatus('Failed to get page text: ' + error.message, 'error');
+        showStatus('Failed to get page text', 'error');
     }
 }
 
