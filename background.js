@@ -110,8 +110,8 @@ async function speakText(text, tabId) {
             }
         }
 
-        // Streaming request
-        const response = await fetch('http://localhost:8000/stream', {
+        // Non-streaming request
+        const response = await fetch('http://localhost:8000/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -122,37 +122,40 @@ async function speakText(text, tabId) {
             })
         });
 
-        if (!response.ok) {
-            throw new Error(`Server error: ${response.status}`);
-        }
+        if (response.ok) {
+            const audioBlob = await response.blob();
 
-        const reader = response.body.getReader();
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
 
-            // Send audio chunk to content script
-            if (tabId) {
-                try {
-                    await chrome.tabs.sendMessage(tabId, {
-                        action: 'streamTTSChunk',
-                        chunk: value.buffer // Send ArrayBuffer
-                    });
-                } catch (error) {
-                    console.error("Error streaming chunk:", error);
-                }
-            }
-        }
-        
-        // Signal end of stream
-        if (tabId) {
-            await chrome.tabs.sendMessage(tabId, {
-                action: 'streamEnd'
+            await new Promise((resolve, reject) => {
+                reader.onloadend = async () => {
+                    const audioDataUrl = reader.result;
+
+                    if (tabId) {
+                        try {
+                            await chrome.tabs.sendMessage(tabId, {
+                                action: 'playTTSAudio',
+                                audioUrl: audioDataUrl
+                            });
+                        } catch (msgError) {
+                            console.error("Error sending audio to tab:", msgError);
+                        }
+                    }
+                    resolve();
+                };
+                reader.onerror = (error) => {
+                    reject(error);
+                };
             });
+
+        } else {
+            const errorText = await response.text();
+            throw new Error(`Server error: ${response.status} - ${errorText}`);
         }
         
     } catch (error) {
-        console.error('TTS Streaming Error:', error);
+        console.error('TTS Error:', error);
         if (tabId) {
             await chrome.tabs.sendMessage(tabId, {
                 action: 'streamError',
