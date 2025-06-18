@@ -92,6 +92,7 @@ To install all required Python packages (including some optional extras for exte
 ```bash
 pip install --upgrade pip setuptools
 cat requirements.txt | xargs -n 1 pip3 install
+install -U flask-cors
 ```
 
 ---
