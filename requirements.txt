@@ -18,6 +18,7 @@ scipy
 soundfile
 kokoro
 flask
+flask-cors
 
 # PDF processing
 pdfminer.six
