@@ -90,6 +90,7 @@ You’ll need Python 3.8+ and `pip` installed. Most systems already have them.
 To install all required Python packages (including some optional extras for extended model usage), run:
 
 ```bash
+pip install --upgrade pip setuptools
 pip install -r requirements.txt
 ```
 
