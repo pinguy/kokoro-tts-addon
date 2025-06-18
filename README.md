@@ -91,7 +91,7 @@ To install all required Python packages (including some optional extras for exte
 
 ```bash
 pip install --upgrade pip setuptools
-pip install -r requirements.txt
+cat requirements.txt | xargs -n 1 pip3 install
 ```
 
 ---
