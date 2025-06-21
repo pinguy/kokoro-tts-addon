@@ -9,7 +9,7 @@
 
 ## 🔍 What is This?
 
-Kokoro TTS is a Firefox extension that lets you convert selected or pasted text into natural-sounding speech — without needing an internet connection.  
+Kokoro TTS is a browser extension that lets you convert selected or pasted text into natural-sounding speech — without needing an internet connection.  
 It uses a lightweight Flask server and the Kokoro model running locally on your system.
 
 - ✅ No accounts or logins
