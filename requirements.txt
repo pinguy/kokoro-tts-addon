@@ -20,15 +20,5 @@ kokoro
 flask
 flask-cors
 
-# PDF processing
-pdfminer.six
-PyMuPDF
-
 # Memory and embeddings
 faiss-cpu
-
-# Optional interactive/monitoring tools
-wandb
-spacy
-gradio
-requests
