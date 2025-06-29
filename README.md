@@ -90,6 +90,7 @@ You’ll need Python 3.8+ and `pip` installed. Most systems already have them.
 To install all required Python packages (including some optional extras for extended model usage), run:
 
 ```bash
+python3 -m pip install --upgrade pip
 pip install --upgrade pip setuptools
 cat requirements.txt | xargs -n 1 pip3 install
 pip3 install -U flask-cors
