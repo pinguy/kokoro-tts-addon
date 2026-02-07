@@ -5,8 +5,13 @@ let currentAudio = null;
 
 // Listen for messages from the content script
 window.addEventListener('message', (event) => {
-    // A basic security check could be to validate event.origin,
-    // but for this internal extension use case, checking the data structure is sufficient.
+    const extensionOrigin = chrome.runtime.getURL('');
+
+    // Only handle messages originating from this extension for security.
+    if (event.origin !== extensionOrigin) {
+        return;
+    }
+
     if (event.data && event.data.action === 'playAudio' && event.data.audioUrl) {
         
         // Stop any audio that might already be playing from a previous request
